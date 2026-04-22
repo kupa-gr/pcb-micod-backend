@@ -146,9 +146,9 @@ export default function Configure() {
         };
 
         if (db) {
-          console.log("Saving order to Firestore...");
+          console.log("Envoi à Firestore (pcb_orders) :", pcbItem);
           const docRef = await addDoc(collection(db, "pcb_orders"), pcbItem);
-          console.log("Order saved with ID:", docRef.id);
+          console.log("Commande enregistrée avec succès ! ID:", docRef.id);
         }
         
         clearTimeout(timeoutId);
