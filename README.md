@@ -25,7 +25,16 @@ npm install
 npm run dev
 ```
 
-### Utilisation
+## Déploiement
+
+### Backend (Production)
+Le backend est configuré pour être déployé (ex: sur Railway ou Render). L'URL de production est :
+`https://pcb-micod-backend-production.up.railway.app`
+
+### Frontend (Production)
+Le frontend est configuré pour pointer vers l'URL du backend de production via `frontend/.env.production`.
+
+## Utilisation
 
 1. Lance le backend sur `http://localhost:3000`.
 2. Lance le frontend sur `http://localhost:5173`.

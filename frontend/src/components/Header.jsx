@@ -1,7 +1,19 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error("Logout error", error);
+    }
+  };
+
   return (
     <header className="site-header">
       <div className="logo-section">
@@ -10,13 +22,24 @@ export default function Header() {
       </div>
       <nav className="main-nav">
         <NavLink to="/" className={({isActive}) => isActive ? "active" : ""}>Accueil</NavLink>
-        <NavLink to="/configure">Services / Cartes PCB</NavLink>
-        <NavLink to="/about">À propos</NavLink>
-        <NavLink to="/contact">Contact</NavLink>
+        <NavLink to="/configure" className={({isActive}) => isActive ? "active" : ""}>Services / Cartes PCB</NavLink>
+        <NavLink to="/about" className={({isActive}) => isActive ? "active" : ""}>À propos</NavLink>
+        <NavLink to="/contact" className={({isActive}) => isActive ? "active" : ""}>Contact</NavLink>
+        <NavLink to="/cart" className={({isActive}) => isActive ? "active" : ""}>Panier</NavLink>
       </nav>
       <div className="auth-buttons">
-        <button className="btn-login">Se connecter</button>
-        <button className="btn-signup">S'inscrire</button>
+        <button className="btn-outline" onClick={() => navigate('/contact')}>Contactez-nous</button>
+        {currentUser ? (
+          <>
+            <span className="user-email" style={{color: 'var(--text-muted)', fontSize: '0.9rem'}}>{currentUser.email}</span>
+            <button className="btn-login" onClick={handleLogout}>Déconnexion</button>
+          </>
+        ) : (
+          <>
+            <button className="btn-login" onClick={() => navigate('/login')}>Se connecter</button>
+            <button className="btn-signup" onClick={() => navigate('/signup')}>S'inscrire</button>
+          </>
+        )}
       </div>
     </header>
   );

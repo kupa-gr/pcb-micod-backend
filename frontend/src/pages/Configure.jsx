@@ -4,6 +4,13 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { storage, db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc } from 'firebase/firestore';
+
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 function TexturedBox({ topSvg, bottomSvg, widthRaw, heightRaw }) {
   const [topTexture, bottomTexture] = useMemo(() => {
@@ -40,8 +47,11 @@ function TexturedBox({ topSvg, bottomSvg, widthRaw, heightRaw }) {
 
 export default function Configure() {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { currentUser } = useAuth();
   const [files, setFiles] = useState([]);
   const [board, setBoard] = useState(null);
+  const [backendFileUrl, setBackendFileUrl] = useState('');
   const [status, setStatus] = useState('');
   
   // Specs form state
@@ -69,11 +79,12 @@ export default function Configure() {
     setStatus('Analyse en cours...');
 
     try {
-      const response = await axios.post('/api/upload', formData, {
+      const response = await axios.post(`${apiBaseUrl}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const boardData = response.data.board;
       setBoard(boardData);
+      setBackendFileUrl(response.data.fileUrl);
       
       // Auto-update right panel form with detected layer count!
       setSpecs(prev => ({ ...prev, layers: `${boardData.layerCount} ${boardData.layerCount > 1 ? 'Couches' : 'Couche'}` }));
@@ -95,10 +106,80 @@ export default function Configure() {
     return base;
   };
 
-  const handleContinue = () => {
-     // Navigate to cart transferring state if needed, or using context
-     // Here using simple location state
-     navigate('/cart', { state: { board, specs, price: calculatePrice() } });
+  const handleContinue = async () => {
+    // 1. Check if logged in
+    if (!currentUser) {
+      alert("Veuillez vous connecter pour continuer votre commande.");
+      navigate('/login');
+      return;
+    }
+
+    // 2. Check if board is analyzed
+    if (!board) {
+      alert("Veuillez d'abord télécharger et analyser un fichier Gerber.");
+      return;
+    }
+
+    setStatus('Sauvegarde en cours...');
+    console.log("Starting save process for user:", currentUser.uid);
+
+    // Promise with 5s timeout for Firestore
+    const saveProcess = new Promise(async (resolve, reject) => {
+      const timeoutId = setTimeout(() => reject(new Error("Timeout (5s)")), 5000);
+      
+      try {
+        // Create a lightweight version of board data for Firestore (remove heavy SVGs)
+        const boardMetadata = {
+          widthMm: board.widthMm,
+          heightMm: board.heightMm,
+          layerCount: board.layerCount
+        };
+
+        const pcbItem = {
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+          board: boardMetadata,
+          specs: { ...specs },
+          price: calculatePrice(),
+          fileUrl: backendFileUrl, // URL locale du backend
+          timestamp: new Date().toISOString()
+        };
+
+        if (db) {
+          console.log("Saving order to Firestore...");
+          const docRef = await addDoc(collection(db, "pcb_orders"), pcbItem);
+          console.log("Order saved with ID:", docRef.id);
+        }
+        
+        clearTimeout(timeoutId);
+        resolve(pcbItem);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        reject(err);
+      }
+    });
+
+    try {
+      const resultItem = await saveProcess;
+      addToCart(resultItem);
+      setStatus('Prêt !');
+      navigate('/cart');
+    } catch (error) {
+      console.error("Save error:", error);
+      
+      const fallbackItem = {
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        board,
+        specs,
+        price: calculatePrice(),
+        fileUrl: backendFileUrl || 'local-only',
+        timestamp: new Date().toISOString()
+      };
+      addToCart(fallbackItem);
+      setStatus('Sauvegardé (Mode local)');
+      setTimeout(() => navigate('/cart'), 1500);
+    }
   };
 
   const getFilterStyle = (color) => {

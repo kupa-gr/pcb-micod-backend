@@ -42,8 +42,10 @@ app.post('/api/upload', upload.array('gerberFiles'), async (req, res) => {
 
     const board = await analyzeGerberFiles(req.files);
     
-    // Générer l'URL d'accès au fichier (on prend le premier pour la démo)
-    const fileUrl = `http://localhost:3000/uploads/${req.files[0].filename}`;
+    // Générer l'URL d'accès au fichier dynamiquement (marche en local et en ligne)
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const fileUrl = `${protocol}://${host}/uploads/${req.files[0].filename}`;
 
     res.json({
       board,
