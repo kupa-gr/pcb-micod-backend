@@ -128,22 +128,31 @@ export default function Configure() {
       const timeoutId = setTimeout(() => reject(new Error("Timeout (5s)")), 5000);
       
       try {
-        // Create a lightweight version of board data for Firestore (remove heavy SVGs)
-        const boardMetadata = {
-          widthMm: board.widthMm || 0,
-          heightMm: board.heightMm || 0,
-          layerCount: board.layerCount || 0
+        // Security: Remove any 'undefined' values recursively
+        const cleanData = (obj) => {
+          const newObj = { ...obj };
+          Object.keys(newObj).forEach(key => {
+            if (newObj[key] === undefined) newObj[key] = "";
+            else if (typeof newObj[key] === 'object' && newObj[key] !== null && !Array.isArray(newObj[key])) {
+              newObj[key] = cleanData(newObj[key]);
+            }
+          });
+          return newObj;
         };
 
-        const pcbItem = {
-          userId: currentUser.uid || "",
-          userEmail: currentUser.email || "",
-          board: boardMetadata,
-          specs: { ...specs },
+        const pcbItem = cleanData({
+          userId: currentUser?.uid || "",
+          userEmail: currentUser?.email || "",
+          board: {
+            widthMm: board?.widthMm || 0,
+            heightMm: board?.heightMm || 0,
+            layerCount: board?.layerCount || 0
+          },
+          specs: specs,
           price: calculatePrice() || 0,
-          fileUrl: backendFileUrl || "", // Ensure this is never undefined
+          fileUrl: backendFileUrl || "",
           timestamp: new Date().toISOString()
-        };
+        });
 
         if (db) {
           console.log("Envoi à Firestore (pcb_orders) :", pcbItem);
