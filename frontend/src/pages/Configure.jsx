@@ -128,31 +128,36 @@ export default function Configure() {
       const timeoutId = setTimeout(() => reject(new Error("Timeout (5s)")), 5000);
       
       try {
-        // Security: Remove any 'undefined' values recursively
-        const cleanData = (obj) => {
-          const newObj = { ...obj };
-          Object.keys(newObj).forEach(key => {
-            if (newObj[key] === undefined) newObj[key] = "";
-            else if (typeof newObj[key] === 'object' && newObj[key] !== null && !Array.isArray(newObj[key])) {
-              newObj[key] = cleanData(newObj[key]);
+        // Ultimate Security: Remove any 'undefined' values and replace with null or empty string
+        const sanitize = (val) => {
+          if (val === undefined) return "";
+          if (val === null) return null;
+          if (Array.isArray(val)) return val.map(sanitize);
+          if (typeof val === 'object') {
+            const cleaned = {};
+            for (const key in val) {
+              cleaned[key] = sanitize(val[key]);
             }
-          });
-          return newObj;
+            return cleaned;
+          }
+          return val;
         };
 
-        const pcbItem = cleanData({
-          userId: currentUser?.uid || "",
-          userEmail: currentUser?.email || "",
+        const rawItem = {
+          userId: currentUser?.uid || "anonymous",
+          userEmail: currentUser?.email || "no-email",
           board: {
             widthMm: board?.widthMm || 0,
             heightMm: board?.heightMm || 0,
             layerCount: board?.layerCount || 0
           },
-          specs: specs,
+          specs: specs || {},
           price: calculatePrice() || 0,
           fileUrl: backendFileUrl || "",
           timestamp: new Date().toISOString()
-        });
+        };
+
+        const pcbItem = sanitize(rawItem);
 
         if (db) {
           console.log("Envoi à Firestore (pcb_orders) :", pcbItem);
