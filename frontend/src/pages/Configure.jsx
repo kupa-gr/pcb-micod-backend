@@ -130,18 +130,18 @@ export default function Configure() {
       try {
         // Create a lightweight version of board data for Firestore (remove heavy SVGs)
         const boardMetadata = {
-          widthMm: board.widthMm,
-          heightMm: board.heightMm,
-          layerCount: board.layerCount
+          widthMm: board.widthMm || 0,
+          heightMm: board.heightMm || 0,
+          layerCount: board.layerCount || 0
         };
 
         const pcbItem = {
-          userId: currentUser.uid,
-          userEmail: currentUser.email,
+          userId: currentUser.uid || "",
+          userEmail: currentUser.email || "",
           board: boardMetadata,
           specs: { ...specs },
-          price: calculatePrice(),
-          fileUrl: backendFileUrl, // URL locale du backend
+          price: calculatePrice() || 0,
+          fileUrl: backendFileUrl || "", // Ensure this is never undefined
           timestamp: new Date().toISOString()
         };
 
