@@ -55,8 +55,12 @@ const countryMeta = {
   UG: { currency: 'UGX', prefix: '+256', rate: 3800, minAmount: 100 }
 };
 
-const port = 5000;
+const port = process.env.PORT || 5000;
 const SHWARY_CALLBACK_URL = process.env.SHWARY_CALLBACK_URL || `http://localhost:${port}/api/shwary/callback`;
+
+app.get('/', (req, res) => {
+  res.send('Backend PCB order API est opérationnel ! 🚀');
+});
 
 const uploadCallbacksFile = path.join(__dirname, 'shwary-callbacks.json');
 
