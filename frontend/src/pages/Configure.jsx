@@ -83,8 +83,10 @@ export default function Configure() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const boardData = response.data.board;
+      const uploadedFileUrl =
+        typeof response?.data?.fileUrl === 'string' ? response.data.fileUrl : '';
       setBoard(boardData);
-      setBackendFileUrl(response.data.fileUrl);
+      setBackendFileUrl(uploadedFileUrl);
       
       // Auto-update right panel form with detected layer count!
       setSpecs(prev => ({ ...prev, layers: `${boardData.layerCount} ${boardData.layerCount > 1 ? 'Couches' : 'Couche'}` }));
@@ -143,6 +145,9 @@ export default function Configure() {
           return val;
         };
 
+        const safeFileUrl =
+          typeof backendFileUrl === 'string' ? backendFileUrl : '';
+
         const rawItem = {
           userId: currentUser?.uid || "anonymous",
           userEmail: currentUser?.email || "no-email",
@@ -153,7 +158,7 @@ export default function Configure() {
           },
           specs: specs || {},
           price: calculatePrice() || 0,
-          fileUrl: backendFileUrl || "",
+          fileUrl: safeFileUrl,
           timestamp: new Date().toISOString()
         };
 
@@ -162,6 +167,7 @@ export default function Configure() {
         if (db) {
           console.log("Envoi à Firestore (pcb_orders) :", pcbItem);
           const docRef = await addDoc(collection(db, "pcb_orders"), pcbItem);
+          pcbItem.firestoreId = docRef.id;
           console.log("Commande enregistrée avec succès ! ID:", docRef.id);
         }
         

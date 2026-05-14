@@ -39,3 +39,11 @@ Le frontend est configuré pour pointer vers l'URL du backend de production via 
 1. Lance le backend sur `http://localhost:3000`.
 2. Lance le frontend sur `http://localhost:5173`.
 3. Connectez-vous ou inscrivez-vous pour passer une commande.
+
+## Intégration Shwary
+
+Le backend expose désormais un endpoint Shwary : `/api/shwary/payment`.
+
+- Placez vos identifiants dans `backend/.env` ou utilisez `backend/.env.example`.
+- Variables attendues : `SHWARY_MERCHANT_ID`, `SHWARY_MERCHANT_KEY`, `SHWARY_USE_SANDBOX`, `SHWARY_CALLBACK_URL`.
+- Le callback Shwary est reçu sur : `/api/shwary/callback`.
