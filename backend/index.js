@@ -8,7 +8,13 @@ const { analyzeGerberFiles } = require('./gerber');
 const admin = require('firebase-admin');
 
 try {
-  const serviceAccount = require('./firebaseServiceAccount.json');
+  let serviceAccount;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  } else {
+    serviceAccount = require('./firebaseServiceAccount.json');
+  }
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
