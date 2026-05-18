@@ -5,3 +5,4 @@ uploads/
 dist/
 build/
 *.log
+firebaseServiceAccount.json
